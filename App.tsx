@@ -7,7 +7,8 @@ import {
   StyleSheet,
   StatusBar,
   ToastAndroid,
-  Platform, // Добавлен Platform
+  Platform,
+  PermissionsAndroid, // <-- 1. Импортируем PermissionsAndroid
 } from 'react-native';
 
 const {MediaKeyListener} = NativeModules;
@@ -16,28 +17,52 @@ function App(): React.JSX.Element {
   const [pressCount, setPressCount] = useState(0);
 
   useEffect(() => {
-    // [10] Toast при запуске прослушивания в JS
+    const requestPermissionAndStartService = async () => {
+      if (Platform.OS === 'android') {
+        try {
+          // 2. Запрашиваем разрешение перед запуском
+          const granted = await PermissionsAndroid.request(
+            PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS,
+            {
+              title: 'Разрешение для ktest',
+              message:
+                'Приложению нужно разрешение на показ уведомлений, ' +
+                'чтобы служба отслеживания кнопок могла работать в фоне.',
+              buttonNeutral: 'Спросить позже',
+              buttonNegative: 'Отклонить',
+              buttonPositive: 'Разрешить',
+            },
+          );
+          if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+            ToastAndroid.show('Разрешение получено, запускаем службу...', ToastAndroid.SHORT);
+            // 3. Запускаем службу ТОЛЬКО после получения разрешения
+            MediaKeyListener.start();
+          } else {
+            ToastAndroid.show('Разрешение отклонено!', ToastAndroid.SHORT);
+          }
+        } catch (err) {
+          console.warn(err);
+        }
+      }
+    };
+
     ToastAndroid.show('10: JS: Запуск прослушивания', ToastAndroid.SHORT);
-    MediaKeyListener.start(); // Запускаем службу
+    requestPermissionAndStartService(); // <-- 4. Вызываем нашу новую функцию
 
     const eventEmitter = new NativeEventEmitter(MediaKeyListener);
     const subscription = eventEmitter.addListener(
       'onMediaKey79Pressed',
       () => {
-        // [11] Toast при получении события
         ToastAndroid.show('11: JS: Кнопка 79 получена', ToastAndroid.SHORT);
-        console.log('Кнопка 79 была нажата!');
         setPressCount(prevCount => prevCount + 1);
       },
     );
 
     return () => {
-      // [12] Toast при отписке
       ToastAndroid.show('12: JS: Отписка и остановка службы', ToastAndroid.SHORT);
       subscription.remove();
-      // Останавливаем службу
       if (Platform.OS === 'android') {
-        MediaKeyListener.stop();
+          MediaKeyListener.stop();
       }
     };
   }, []);
@@ -80,5 +105,6 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
 });
+
 
 export default App;
