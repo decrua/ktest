@@ -10,7 +10,6 @@ import com.facebook.react.bridge.ReactMethod
 class MediaKeyListenerModule(private val reactContext: ReactApplicationContext) : ReactContextBaseJavaModule(reactContext) {
 
     init {
-        // Передаем контекст в статическое поле сервиса
         MediaKeyService.reactContext = reactContext
     }
 
@@ -20,7 +19,6 @@ class MediaKeyListenerModule(private val reactContext: ReactApplicationContext) 
     fun start() {
         Toast.makeText(reactContext, "4: Запрос на запуск службы", Toast.LENGTH_SHORT).show()
         val intent = Intent(reactContext, MediaKeyService::class.java)
-        // Для Android O (8.0) и выше используем startForegroundService
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             reactContext.startForegroundService(intent)
         } else {
@@ -30,12 +28,11 @@ class MediaKeyListenerModule(private val reactContext: ReactApplicationContext) 
 
     @ReactMethod
     fun stop() {
-        Toast.makeText(reactContext, "Запрос на остановку службы", Toast.LENGTH_SHORT).show()
+        Toast.makeText(reactContext, "6: Запрос на остановку службы", Toast.LENGTH_SHORT).show()
         val intent = Intent(reactContext, MediaKeyService::class.java)
         reactContext.stopService(intent)
     }
 
-    // Эти методы нужны для NativeEventEmitter
     @ReactMethod
     fun addListener(eventName: String) {}
 

@@ -20,7 +20,6 @@ class MediaKeyService : Service() {
     private val uiHandler = Handler(Looper.getMainLooper())
 
     companion object {
-        // Простой способ передать React Context в сервис
         var reactContext: ReactApplicationContext? = null
     }
 
@@ -30,9 +29,8 @@ class MediaKeyService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        showToast("Служба MediaKeyService создана")
+        showToast("7: Служба MediaKeyService создана")
 
-        // 1. Создаем MediaSession
         mediaSession = MediaSession(this, "ktestMediaSessionService")
         mediaSession.setFlags(MediaSession.FLAG_HANDLES_MEDIA_BUTTONS or MediaSession.FLAG_HANDLES_TRANSPORT_CONTROLS)
 
@@ -42,7 +40,6 @@ class MediaKeyService : Service() {
             .build()
         mediaSession.setPlaybackState(state)
 
-        // 2. Устанавливаем колбэк
         mediaSession.setCallback(object : MediaSession.Callback() {
             override fun onMediaButtonEvent(mediaButtonEvent: Intent): Boolean {
                 val keyEvent = mediaButtonEvent.getParcelableExtra<android.view.KeyEvent>(Intent.EXTRA_KEY_EVENT)
@@ -58,9 +55,8 @@ class MediaKeyService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        showToast("Служба запущена")
+        showToast("8: Служба запущена")
 
-        // 3. Создаем уведомление и запускаем службу в режиме Foreground
         val channelId = "MediaKeyChannel"
         val channel = NotificationChannel(channelId, "Media Key Listener", NotificationManager.IMPORTANCE_LOW)
         getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
@@ -68,25 +64,23 @@ class MediaKeyService : Service() {
         val notification = Notification.Builder(this, channelId)
             .setContentTitle("ktest работает")
             .setContentText("Отслеживание медиа-кнопок активно")
-            .setSmallIcon(R.mipmap.ic_launcher) // Важно указать иконку
+            .setSmallIcon(R.mipmap.ic_launcher)
             .build()
 
         startForeground(1, notification)
 
-        // 4. Активируем сессию
         mediaSession.isActive = true
 
-        return START_STICKY // Перезапускать службу, если система ее убьет
+        return START_STICKY
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        showToast("Служба остановлена")
+        showToast("13: Служба остановлена")
         mediaSession.release()
     }
 
     private fun sendEvent(eventName: String, params: Any?) {
-        // Используем переданный React Context для отправки события в JS
         reactContext?.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
             ?.emit(eventName, params)
     }

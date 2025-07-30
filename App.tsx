@@ -8,7 +8,7 @@ import {
   StatusBar,
   ToastAndroid,
   Platform,
-  PermissionsAndroid, // <-- 1. Импортируем PermissionsAndroid
+  PermissionsAndroid,
 } from 'react-native';
 
 const {MediaKeyListener} = NativeModules;
@@ -20,7 +20,6 @@ function App(): React.JSX.Element {
     const requestPermissionAndStartService = async () => {
       if (Platform.OS === 'android') {
         try {
-          // 2. Запрашиваем разрешение перед запуском
           const granted = await PermissionsAndroid.request(
             PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS,
             {
@@ -34,11 +33,10 @@ function App(): React.JSX.Element {
             },
           );
           if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-            ToastAndroid.show('Разрешение получено, запускаем службу...', ToastAndroid.SHORT);
-            // 3. Запускаем службу ТОЛЬКО после получения разрешения
+            ToastAndroid.show('3: Разрешение получено, запускаем службу...', ToastAndroid.SHORT);
             MediaKeyListener.start();
           } else {
-            ToastAndroid.show('Разрешение отклонено!', ToastAndroid.SHORT);
+            ToastAndroid.show('14: Разрешение отклонено!', ToastAndroid.SHORT);
           }
         } catch (err) {
           console.warn(err);
@@ -47,7 +45,7 @@ function App(): React.JSX.Element {
     };
 
     ToastAndroid.show('10: JS: Запуск прослушивания', ToastAndroid.SHORT);
-    requestPermissionAndStartService(); // <-- 4. Вызываем нашу новую функцию
+    requestPermissionAndStartService();
 
     const eventEmitter = new NativeEventEmitter(MediaKeyListener);
     const subscription = eventEmitter.addListener(
@@ -105,6 +103,5 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
 });
-
 
 export default App;
