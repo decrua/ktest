@@ -1,0 +1,67 @@
+name: Build and Release APK
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write  # 🔥 обязательно для release!
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Install GitHub CLI
+      run: sudo apt install gh -y
+
+    - name: Delete all previous releases
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        echo "Getting existing releases..."
+        tags=$(gh release list --limit 100 --json tagName --jq '.[].tagName')
+        for tag in $tags; do
+          echo "Deleting release and tag: $tag"
+          gh release delete "$tag" -y
+          git push origin --delete "$tag" || true  # удалить git-тег из репозитория
+        done
+
+    - name: Ensure assets directory exists
+      run: mkdir -p android/app/src/main/assets
+
+    - name: Bundle JS and assets
+      run: |
+        npm install -g react-native-cli
+        npx react-native bundle \
+          --platform android \
+          --dev true \
+          --entry-file index.js \
+          --bundle-output android/app/src/main/assets/index.android.bundle \
+          --assets-dest android/app/src/main/res
+
+    - name: Build Debug APK
+      run: |
+        cd android
+        ./gradlew assembleDebug
+
+    - name: Create GitHub Release and Upload APK
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: v1.0.${{ github.run_number }}
+        name: Release v1.0.${{ github.run_number }}
+        files: android/app/build/outputs/apk/debug/app-debug.apk
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
