@@ -1,3 +1,4 @@
+//===== MainApplication.kt =====
 package com.ktest
 
 import android.app.Application
@@ -10,14 +11,17 @@ import com.facebook.react.ReactPackage
 import com.facebook.react.defaults.DefaultReactHost.getDefaultReactHost
 import com.facebook.react.defaults.DefaultReactNativeHost
 
+import com.ktest.MediaKeyListenerPackage // <-- Импорт пакета
+
 class MainApplication : Application(), ReactApplication {
 
   override val reactNativeHost: ReactNativeHost =
       object : DefaultReactNativeHost(this) {
         override fun getPackages(): List<ReactPackage> =
             PackageList(this).packages.apply {
-              // Packages that cannot be autolinked yet can be added manually here, for example:
-              // add(MyReactNativePackage())
+              // Пакеты, созданные автоматически, уже здесь.
+              // Добавьте ваш пакет ниже:
+              add(MediaKeyListenerPackage()) // <-- Добавлено вручную
             }
 
         override fun getJSMainModuleName(): String = "index"
