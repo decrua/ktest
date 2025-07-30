@@ -6,6 +6,7 @@ import {
   NativeEventEmitter,
   StyleSheet,
   StatusBar,
+  ToastAndroid, // Добавлен импорт для Toast
 } from 'react-native';
 
 const {MediaKeyListener} = NativeModules;
@@ -14,21 +15,24 @@ function App(): React.JSX.Element {
   const [pressCount, setPressCount] = useState(0);
 
   useEffect(() => {
-    // Запускаем прослушивание на нативной стороне
+    // [10] Toast при запуске прослушивания в JS
+    ToastAndroid.show('10: JS: Запуск прослушивания', ToastAndroid.SHORT);
     MediaKeyListener.start();
 
-    // Подписываемся на событие
     const eventEmitter = new NativeEventEmitter(MediaKeyListener);
     const subscription = eventEmitter.addListener(
       'onMediaKey79Pressed',
       () => {
+        // [11] Toast при получении события
+        ToastAndroid.show('11: JS: Кнопка 79 получена', ToastAndroid.SHORT);
         console.log('Кнопка 79 была нажата!');
         setPressCount(prevCount => prevCount + 1);
       },
     );
 
-    // Очистка при размонтировании компонента
     return () => {
+      // [12] Toast при отписке
+      ToastAndroid.show('12: JS: Отписка от событий', ToastAndroid.SHORT);
       subscription.remove();
     };
   }, []);

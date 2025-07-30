@@ -1,5 +1,6 @@
 package com.ktest
 
+import android.widget.Toast
 import android.view.View
 import com.facebook.react.ReactPackage
 import com.facebook.react.bridge.NativeModule
@@ -14,5 +15,9 @@ class MediaKeyListenerPackage : ReactPackage {
 
     override fun createNativeModules(
         reactContext: ReactApplicationContext
-    ): MutableList<NativeModule> = listOf(MediaKeyListenerModule(reactContext)).toMutableList()
+    ): MutableList<NativeModule> {
+        // [9] Toast при создании нативного модуля
+        Toast.makeText(reactContext, "9: Создание нативного модуля", Toast.LENGTH_SHORT).show()
+        return listOf(MediaKeyListenerModule(reactContext)).toMutableList()
+    }
 }
