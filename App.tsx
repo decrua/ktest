@@ -6,7 +6,8 @@ import {
   NativeEventEmitter,
   StyleSheet,
   StatusBar,
-  ToastAndroid, // Добавлен импорт для Toast
+  ToastAndroid,
+  Platform, // Добавлен Platform
 } from 'react-native';
 
 const {MediaKeyListener} = NativeModules;
@@ -17,7 +18,7 @@ function App(): React.JSX.Element {
   useEffect(() => {
     // [10] Toast при запуске прослушивания в JS
     ToastAndroid.show('10: JS: Запуск прослушивания', ToastAndroid.SHORT);
-    MediaKeyListener.start();
+    MediaKeyListener.start(); // Запускаем службу
 
     const eventEmitter = new NativeEventEmitter(MediaKeyListener);
     const subscription = eventEmitter.addListener(
@@ -32,8 +33,12 @@ function App(): React.JSX.Element {
 
     return () => {
       // [12] Toast при отписке
-      ToastAndroid.show('12: JS: Отписка от событий', ToastAndroid.SHORT);
+      ToastAndroid.show('12: JS: Отписка и остановка службы', ToastAndroid.SHORT);
       subscription.remove();
+      // Останавливаем службу
+      if (Platform.OS === 'android') {
+        MediaKeyListener.stop();
+      }
     };
   }, []);
 
