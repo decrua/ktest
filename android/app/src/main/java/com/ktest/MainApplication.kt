@@ -1,6 +1,8 @@
 package com.ktest
 
 import android.app.Application
+import android.os.Handler
+import android.os.Looper
 import android.widget.Toast
 import com.facebook.react.PackageList
 import com.facebook.react.ReactApplication
@@ -16,8 +18,14 @@ class MainApplication : Application(), ReactApplication {
     override val reactNativeHost: ReactNativeHost =
         object : DefaultReactNativeHost(this) {
             override fun getPackages(): List<ReactPackage> {
-                // [1] Toast при инициализации пакетов
-                Toast.makeText(applicationContext, "1: Инициализация пакетов", Toast.LENGTH_SHORT).show()
+                // Используем Handler для UI-потока
+                Handler(Looper.getMainLooper()).post {
+                    Toast.makeText(
+                        applicationContext, 
+                        "1: Инициализация пакетов", 
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
                 
                 return PackageList(this).packages.apply {
                     add(MediaKeyListenerPackage())
@@ -35,8 +43,12 @@ class MainApplication : Application(), ReactApplication {
 
     override fun onCreate() {
         super.onCreate()
-        // [2] Toast при создании приложения
-        Toast.makeText(this, "2: Приложение запущено", Toast.LENGTH_SHORT).show()
+        // Здесь мы уже в UI потоке
+        Toast.makeText(
+            this, 
+            "2: Приложение запущено", 
+            Toast.LENGTH_SHORT
+        ).show()
         loadReactNative(this)
     }
 }

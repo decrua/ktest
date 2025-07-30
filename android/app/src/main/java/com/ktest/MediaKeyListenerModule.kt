@@ -3,6 +3,8 @@ package com.ktest
 import android.content.Context
 import android.media.session.MediaSession
 import android.media.session.PlaybackState
+import android.os.Handler
+import android.os.Looper
 import android.widget.Toast
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
@@ -12,18 +14,17 @@ import com.facebook.react.modules.core.DeviceEventManagerModule
 class MediaKeyListenerModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaModule(reactContext) {
 
     private lateinit var mediaSession: MediaSession
+    private val uiHandler = Handler(Looper.getMainLooper())
 
     init {
-        // [3] Toast при создании модуля
-        Toast.makeText(reactContext, "3: Модуль MediaKey создан", Toast.LENGTH_SHORT).show()
+        showToast("3: Модуль MediaKey создан")
     }
 
     override fun getName() = "MediaKeyListener"
 
     @ReactMethod
     fun start() {
-        // [4] Toast при запуске прослушивания
-        Toast.makeText(reactApplicationContext, "4: Прослушивание запущено", Toast.LENGTH_SHORT).show()
+        showToast("4: Прослушивание запущено")
         
         mediaSession = MediaSession(reactApplicationContext, "ktestMediaSession")
         mediaSession.setFlags(MediaSession.FLAG_HANDLES_MEDIA_BUTTONS or MediaSession.FLAG_HANDLES_TRANSPORT_CONTROLS)
@@ -39,12 +40,7 @@ class MediaKeyListenerModule(reactContext: ReactApplicationContext) : ReactConte
                 val keyEvent = mediaButtonEvent.getParcelableExtra<android.view.KeyEvent>(android.content.Intent.EXTRA_KEY_EVENT)
                 if (keyEvent != null && keyEvent.action == android.view.KeyEvent.ACTION_DOWN) {
                     if (keyEvent.keyCode == 79) {
-                        // [5] Toast при обнаружении нажатия
-                        Toast.makeText(
-                            reactApplicationContext, 
-                            "5: Кнопка 79 нажата!", 
-                            Toast.LENGTH_SHORT
-                        ).show()
+                        showToast("5: Кнопка 79 нажата!")
                         sendEvent("onMediaKey79Pressed", null)
                     }
                 }
@@ -55,13 +51,7 @@ class MediaKeyListenerModule(reactContext: ReactApplicationContext) : ReactConte
     }
 
     private fun sendEvent(eventName: String, params: Any?) {
-        // [6] Toast при отправке события в JS
-        Toast.makeText(
-            reactApplicationContext, 
-            "6: Событие $eventName отправлено", 
-            Toast.LENGTH_SHORT
-        ).show()
-        
+        showToast("6: Событие $eventName отправлено")
         reactApplicationContext
             .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter::class.java)
             .emit(eventName, params)
@@ -69,19 +59,22 @@ class MediaKeyListenerModule(reactContext: ReactApplicationContext) : ReactConte
 
     @ReactMethod
     fun addListener(eventName: String) {
-        Toast.makeText(
-            reactApplicationContext, 
-            "7: Слушатель $eventName добавлен", 
-            Toast.LENGTH_SHORT
-        ).show()
+        showToast("7: Слушатель $eventName добавлен")
     }
 
     @ReactMethod
     fun removeListeners(count: Int) {
-        Toast.makeText(
-            reactApplicationContext, 
-            "8: Удалено $count слушателей", 
-            Toast.LENGTH_SHORT
-        ).show()
+        showToast("8: Удалено $count слушателей")
+    }
+
+    // Показ Toast в UI потоке
+    private fun showToast(message: String) {
+        uiHandler.post {
+            Toast.makeText(
+                reactApplicationContext, 
+                message, 
+                Toast.LENGTH_SHORT
+            ).show()
+        }
     }
 }

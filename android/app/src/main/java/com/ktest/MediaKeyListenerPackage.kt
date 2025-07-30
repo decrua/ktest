@@ -1,5 +1,7 @@
 package com.ktest
 
+import android.os.Handler
+import android.os.Looper
 import android.widget.Toast
 import android.view.View
 import com.facebook.react.ReactPackage
@@ -16,8 +18,14 @@ class MediaKeyListenerPackage : ReactPackage {
     override fun createNativeModules(
         reactContext: ReactApplicationContext
     ): MutableList<NativeModule> {
-        // [9] Toast при создании нативного модуля
-        Toast.makeText(reactContext, "9: Создание нативного модуля", Toast.LENGTH_SHORT).show()
+        // Используем Handler для UI-потока
+        Handler(Looper.getMainLooper()).post {
+            Toast.makeText(
+                reactContext, 
+                "9: Создание нативного модуля", 
+                Toast.LENGTH_SHORT
+            ).show()
+        }
         return listOf(MediaKeyListenerModule(reactContext)).toMutableList()
     }
 }
