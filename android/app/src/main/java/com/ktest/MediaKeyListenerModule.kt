@@ -1,7 +1,6 @@
 package com.ktest
 
 import android.content.Intent
-import android.os.Build
 import android.widget.Toast
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
@@ -9,8 +8,13 @@ import com.facebook.react.bridge.ReactMethod
 
 class MediaKeyListenerModule(private val reactContext: ReactApplicationContext) : ReactContextBaseJavaModule(reactContext) {
 
+    // Определяем константы для наших команд
+    companion object {
+        const val ACTION_START_SERVICE = "com.ktest.ACTION_START_SERVICE"
+        const val ACTION_STOP_SERVICE = "com.ktest.ACTION_STOP_SERVICE"
+    }
+
     init {
-        // Передаем контекст для отправки событий в JS
         MediaKeyService.reactContext = reactContext
     }
 
@@ -18,27 +22,18 @@ class MediaKeyListenerModule(private val reactContext: ReactApplicationContext) 
 
     @ReactMethod
     fun start() {
-        Toast.makeText(reactContext, "4: Запрос на запуск службы", Toast.LENGTH_SHORT).show()
-        // Используем applicationContext - это более надежно для запуска служб
-        val appContext = reactContext.applicationContext
-        val intent = Intent(appContext, MediaKeyService::class.java)
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            appContext.startForegroundService(intent)
-        } else {
-            appContext.startService(intent)
-        }
+        Toast.makeText(reactContext, "4: Отправка команды на запуск службы", Toast.LENGTH_SHORT).show()
+        val intent = Intent(ACTION_START_SERVICE)
+        reactContext.sendBroadcast(intent)
     }
 
     @ReactMethod
     fun stop() {
-        Toast.makeText(reactContext, "6: Запрос на остановку службы", Toast.LENGTH_SHORT).show()
-        val appContext = reactContext.applicationContext
-        val intent = Intent(appContext, MediaKeyService::class.java)
-        appContext.stopService(intent)
+        Toast.makeText(reactContext, "6: Отправка команды на остановку службы", Toast.LENGTH_SHORT).show()
+        val intent = Intent(ACTION_STOP_SERVICE)
+        reactContext.sendBroadcast(intent)
     }
 
-    // Методы для NativeEventEmitter
     @ReactMethod
     fun addListener(eventName: String) {}
 
