@@ -10,6 +10,7 @@ import com.facebook.react.bridge.ReactMethod
 class MediaKeyListenerModule(private val reactContext: ReactApplicationContext) : ReactContextBaseJavaModule(reactContext) {
 
     init {
+        // Передаем контекст для отправки событий в JS
         MediaKeyService.reactContext = reactContext
     }
 
@@ -18,21 +19,26 @@ class MediaKeyListenerModule(private val reactContext: ReactApplicationContext) 
     @ReactMethod
     fun start() {
         Toast.makeText(reactContext, "4: Запрос на запуск службы", Toast.LENGTH_SHORT).show()
-        val intent = Intent(reactContext, MediaKeyService::class.java)
+        // Используем applicationContext - это более надежно для запуска служб
+        val appContext = reactContext.applicationContext
+        val intent = Intent(appContext, MediaKeyService::class.java)
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            reactContext.startForegroundService(intent)
+            appContext.startForegroundService(intent)
         } else {
-            reactContext.startService(intent)
+            appContext.startService(intent)
         }
     }
 
     @ReactMethod
     fun stop() {
         Toast.makeText(reactContext, "6: Запрос на остановку службы", Toast.LENGTH_SHORT).show()
-        val intent = Intent(reactContext, MediaKeyService::class.java)
-        reactContext.stopService(intent)
+        val appContext = reactContext.applicationContext
+        val intent = Intent(appContext, MediaKeyService::class.java)
+        appContext.stopService(intent)
     }
 
+    // Методы для NativeEventEmitter
     @ReactMethod
     fun addListener(eventName: String) {}
 
