@@ -13,6 +13,7 @@ file_mapping = {
     'y': "android/app/src/main/java/com/ktest/MediaKeyListenerModule.kt",    
     'w': "android/app/src/main/java/com/ktest/MediaKeyListenerPackage.kt",    
     'u': "android/app/src/main/java/com/ktest/MediaKeyService.kt",    
+    'i': "android/app/src/main/java/com/ktest/MediaButtonReceiver.kt",    
 #    'u': "android/app/src/main/res/xml/service_config.xml",    
 #    'i': "android/app/src/main/res/values/strings.xml",    
 #    'o': "android/app/src/main/java/com/rtest/SettingsActivity.kt",    
