@@ -3,15 +3,13 @@ package com.ktest
 import android.app.Application
 import android.content.Intent
 import android.os.Build
-import android.os.Handler
-import android.os.Looper
 import android.widget.Toast
 import com.facebook.react.PackageList
 import com.facebook.react.ReactApplication
 import com.facebook.react.ReactHost
 import com.facebook.react.ReactNativeHost
 import com.facebook.react.ReactPackage
-import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint.loadNamedLibrary
+import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint.load // <-- Correct import
 import com.facebook.react.defaults.DefaultReactHost.getDefaultReactHost
 import com.facebook.react.defaults.DefaultReactNativeHost
 import com.facebook.soloader.SoLoader
@@ -20,19 +18,10 @@ class MainApplication : Application(), ReactApplication {
 
   override val reactNativeHost: ReactNativeHost =
       object : DefaultReactNativeHost(this) {
-        override fun getPackages(): List<ReactPackage> {
-          // Используем Handler для UI-потока
-          Handler(Looper.getMainLooper()).post {
-              Toast.makeText(
-                  applicationContext,
-                  "1: Инициализация пакетов",
-                  Toast.LENGTH_SHORT
-              ).show()
-          }
-          return PackageList(this).packages.apply {
-            add(MediaKeyListenerPackage())
-          }
-        }
+        override fun getPackages(): List<ReactPackage> =
+            PackageList(this).packages.apply {
+              add(MediaKeyListenerPackage())
+            }
 
         override fun getJSMainModuleName(): String = "index"
 
@@ -50,11 +39,13 @@ class MainApplication : Application(), ReactApplication {
     super.onCreate()
     Toast.makeText(this, "2: Приложение запущено", Toast.LENGTH_SHORT).show()
     SoLoader.init(this, false)
+
+    // CORRECTED BLOCK FOR NEW ARCHITECTURE
     if (BuildConfig.IS_NEW_ARCHITECTURE_ENABLED) {
-      loadNamedLibrary("react_newarchdefaults")
+      // If you opted-in for the New Architecture, we load the native entry point for this app.
+      load()
     }
     
-    // ЗАПУСКАЕМ СЛУЖБУ ЗДЕСЬ!
     startMediaKeyService()
   }
 
@@ -67,3 +58,4 @@ class MainApplication : Application(), ReactApplication {
       }
   }
 }
+
