@@ -7,8 +7,6 @@ import {
   StyleSheet,
   StatusBar,
   ToastAndroid,
-  Platform,
-  PermissionsAndroid,
 } from 'react-native';
 
 const {MediaKeyListener} = NativeModules;
@@ -17,35 +15,7 @@ function App(): React.JSX.Element {
   const [pressCount, setPressCount] = useState(0);
 
   useEffect(() => {
-    const requestPermissionAndStartService = async () => {
-      if (Platform.OS === 'android') {
-        try {
-          const granted = await PermissionsAndroid.request(
-            PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS,
-            {
-              title: 'Разрешение для ktest',
-              message:
-                'Приложению нужно разрешение на показ уведомлений, ' +
-                'чтобы служба отслеживания кнопок могла работать в фоне.',
-              buttonNeutral: 'Спросить позже',
-              buttonNegative: 'Отклонить',
-              buttonPositive: 'Разрешить',
-            },
-          );
-          if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-            ToastAndroid.show('3: Разрешение получено, запускаем службу...', ToastAndroid.SHORT);
-            MediaKeyListener.start();
-          } else {
-            ToastAndroid.show('14: Разрешение отклонено!', ToastAndroid.SHORT);
-          }
-        } catch (err) {
-          console.warn(err);
-        }
-      }
-    };
-
-    ToastAndroid.show('10: JS: Запуск прослушивания', ToastAndroid.SHORT);
-    requestPermissionAndStartService();
+    ToastAndroid.show('10: JS: Подписка на события', ToastAndroid.SHORT);
 
     const eventEmitter = new NativeEventEmitter(MediaKeyListener);
     const subscription = eventEmitter.addListener(
@@ -57,11 +27,8 @@ function App(): React.JSX.Element {
     );
 
     return () => {
-      ToastAndroid.show('12: JS: Отписка и остановка службы', ToastAndroid.SHORT);
+      ToastAndroid.show('12: JS: Отписка от событий', ToastAndroid.SHORT);
       subscription.remove();
-      if (Platform.OS === 'android') {
-          MediaKeyListener.stop();
-      }
     };
   }, []);
 
@@ -77,6 +44,7 @@ function App(): React.JSX.Element {
   );
 }
 
+// Стили остаются без изменений...
 const styles = StyleSheet.create({
   container: {
     flex: 1,
