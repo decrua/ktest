@@ -15,6 +15,7 @@ import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import android.view.KeyEvent // <-- Новый импорт
 import android.widget.Toast
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.modules.core.DeviceEventManagerModule
@@ -32,9 +33,8 @@ class MediaKeyService : Service(), AudioManager.OnAudioFocusChangeListener {
 
     override fun onBind(intent: Intent?): IBinder? = null
 
-    // Метод для обработки изменений аудиофокуса
     override fun onAudioFocusChange(focusChange: Int) {
-        // Здесь можно обрабатывать потерю фокуса, но для нашей задачи это не критично
+        // Логируем для отладки
         showToast("Статус аудиофокуса изменился: $focusChange")
     }
 
@@ -43,25 +43,29 @@ class MediaKeyService : Service(), AudioManager.OnAudioFocusChangeListener {
         showToast("7: Служба MediaKeyService создана")
 
         audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
-
         mediaSession = MediaSession(this, "ktestMediaSessionService")
-        // ... остальная настройка mediaSession ...
-        mediaSession.setFlags(MediaSession.FLAG_HANDLES_MEDIA_BUTTONS or MediaSession.FLAG_HANDLES_TRANSPORT_CONTROLS)
 
-        val state = PlaybackState.Builder()
+        // Состояние воспроизведения, чтобы система считала нас медиа-приложением
+        val stateBuilder = PlaybackState.Builder()
             .setActions(PlaybackState.ACTION_PLAY_PAUSE or PlaybackState.ACTION_PLAY)
-            .setState(PlaybackState.STATE_PLAYING, 0, 1.0f)
-            .build()
-        mediaSession.setPlaybackState(state)
+        mediaSession.setPlaybackState(stateBuilder.build())
 
+        // Колбэк для обработки нажатий медиа-кнопок
         mediaSession.setCallback(object : MediaSession.Callback() {
             override fun onMediaButtonEvent(mediaButtonEvent: Intent): Boolean {
-                showToast("Событие медиа-кнопки получено!") // <-- Важный тост для отладки
-                val keyEvent = mediaButtonEvent.getParcelableExtra<android.view.KeyEvent>(Intent.EXTRA_KEY_EVENT)
-                if (keyEvent != null && keyEvent.action == android.view.KeyEvent.ACTION_DOWN) {
-                    if (keyEvent.keyCode == 79) {
+                val keyEvent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    mediaButtonEvent.getParcelableExtra(Intent.EXTRA_KEY_EVENT, KeyEvent::class.java)
+                } else {
+                    @Suppress("DEPRECATION")
+                    mediaButtonEvent.getParcelableExtra(Intent.EXTRA_KEY_EVENT)
+                }
+
+                if (keyEvent != null && keyEvent.action == KeyEvent.ACTION_DOWN) {
+                    showToast("Событие медиа-кнопки получено! Код: ${keyEvent.keyCode}")
+                    if (keyEvent.keyCode == KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE || keyEvent.keyCode == 79) {
                         showToast("5: Кнопка 79 нажата (из службы)!")
                         sendEvent("onMediaKey79Pressed", null)
+                        return true // <- событие обработано
                     }
                 }
                 return super.onMediaButtonEvent(mediaButtonEvent)
@@ -71,28 +75,31 @@ class MediaKeyService : Service(), AudioManager.OnAudioFocusChangeListener {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         showToast("8: Служба запущена")
-        
-        // 1. Запрашиваем аудиофокус
-        val result = requestAudioFocus()
 
-        if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
-            showToast("Аудиофокус получен!")
-            // 2. Активируем сессию ТОЛЬКО после получения фокуса
+        // Активируем сессию сразу, до запроса аудиофокуса
+        if (!mediaSession.isActive) {
             mediaSession.isActive = true
-        } else {
-            showToast("Не удалось получить аудиофокус.")
+            showToast("Медиа-сессия активирована")
         }
 
-        // 3. Создаем уведомление и запускаем службу в режиме Foreground
-        // ... код создания уведомления без изменений ...
-        val channelId = "MediaKeyChannel"
-        val channel = NotificationChannel(channelId, "Media Key Listener", NotificationManager.IMPORTANCE_LOW)
-        getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
+        // Запрашиваем аудиофокус
+        val result = requestAudioFocus()
+        if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+            showToast("Аудиофокус получен!")
+        } else {
+            showToast("Не удалось получить аудиофокус. Другое приложение может воспроизводить медиа.")
+        }
 
+        // Создаем уведомление и запускаем Foreground Service
+        val channelId = "MediaKeyChannel"
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(channelId, "Media Key Listener", NotificationManager.IMPORTANCE_LOW)
+            getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
+        }
         val notification = Notification.Builder(this, channelId)
             .setContentTitle("ktest работает")
             .setContentText("Отслеживание медиа-кнопок активно")
-            .setSmallIcon(R.mipmap.ic_launcher)
+            .setSmallIcon(R.mipmap.ic_launcher) // проверь, что иконка есть
             .build()
 
         startForeground(1, notification)
@@ -103,7 +110,8 @@ class MediaKeyService : Service(), AudioManager.OnAudioFocusChangeListener {
     override fun onDestroy() {
         super.onDestroy()
         showToast("13: Служба остановлена")
-        abandonAudioFocus() // Освобождаем аудиофокус
+        mediaSession.isActive = false
+        abandonAudioFocus()
         mediaSession.release()
     }
 
@@ -124,7 +132,7 @@ class MediaKeyService : Service(), AudioManager.OnAudioFocusChangeListener {
             audioManager.requestAudioFocus(this, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN)
         }
     }
-    
+
     private fun abandonAudioFocus() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             audioFocusRequest?.let { audioManager.abandonAudioFocusRequest(it) }
